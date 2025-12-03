@@ -5,8 +5,8 @@ WORKDIR /usr/share/nginx/html
 
 # Copy static site content
 COPY index.html ./
-COPY README.md ./
-COPY biengioi.kmz ./
+# COPY README.md ./
+# COPY biengioi.kmz ./
 COPY lib ./lib
 COPY tiles ./tiles
 

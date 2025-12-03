@@ -77,6 +77,119 @@ Start-Process http://localhost:8080/
 - `tiles/` được mount read-only; cập nhật bên ngoài là phục vụ ngay.
 - Public truy cập tại `http://localhost:8080/`. Có thể đổi port nếu cần.
 
+## 📤 Deploy lên Docker Hub và Ubuntu Server
+
+### Bước 1: Đẩy image lên Docker Hub (trên Windows)
+
+```powershell
+# 1. Đăng nhập Docker Hub
+docker login
+
+# 2. Tag image với tên Docker Hub của bạn
+# Thay YOUR_USERNAME bằng username Docker Hub của bạn
+docker tag map-map YOUR_USERNAME/vietnam-offline-map:latest
+
+# 3. Push lên Docker Hub
+docker push YOUR_USERNAME/vietnam-offline-map:latest
+
+# Ví dụ: nếu username là "dantruong"
+# docker tag map-map dantrong/vietnam-offline-map:latest
+# docker push dantrong/vietnam-offline-map:latest
+```
+
+### Bước 2: Kéo về Ubuntu Server và chạy
+
+**Trên Ubuntu Server:**
+
+```bash
+# 1. Cài đặt Docker (nếu chưa có)
+sudo apt update
+sudo apt install -y docker.io docker-compose
+sudo systemctl start docker
+sudo systemctl enable docker
+
+# 2. Thêm user vào group docker (không cần sudo)
+sudo usermod -aG docker $USER
+# Logout và login lại để áp dụng
+
+# 3. Kéo image từ Docker Hub
+docker pull YOUR_USERNAME/vietnam-offline-map:latest
+
+# 4. Chạy container
+docker run -d -p 8080:80 --name vietnam-map \
+  --restart unless-stopped \
+  YOUR_USERNAME/vietnam-offline-map:latest
+
+# 5. Kiểm tra container đang chạy
+docker ps
+
+# 6. Xem logs
+docker logs vietnam-map
+```
+
+### Bước 3: Truy cập trên Ubuntu
+
+```bash
+# Kiểm tra local
+curl http://localhost:8080
+
+# Lấy IP server
+ip addr show
+
+# Truy cập từ máy khác: http://IP_SERVER:8080
+```
+
+### Quản lý container trên Ubuntu
+
+```bash
+# Dừng container
+docker stop vietnam-map
+
+# Khởi động lại
+docker start vietnam-map
+
+# Xóa container
+docker rm -f vietnam-map
+
+# Cập nhật image mới
+docker pull YOUR_USERNAME/vietnam-offline-map:latest
+docker stop vietnam-map
+docker rm vietnam-map
+docker run -d -p 8080:80 --name vietnam-map \
+  --restart unless-stopped \
+  YOUR_USERNAME/vietnam-offline-map:latest
+```
+
+### Mount tiles từ server (tùy chọn)
+
+Nếu muốn lưu tiles riêng trên server:
+
+```bash
+# Tạo thư mục tiles trên server
+mkdir -p /opt/vietnam-map/tiles
+
+# Copy tiles từ Windows sang Ubuntu (trên Windows)
+scp -r .\tiles username@ubuntu_ip:/opt/vietnam-map/
+
+# Chạy container với volume mount
+docker run -d -p 8080:80 --name vietnam-map \
+  -v /opt/vietnam-map/tiles:/usr/share/nginx/html/tiles:ro \
+  --restart unless-stopped \
+  YOUR_USERNAME/vietnam-offline-map:latest
+```
+
+### Mở firewall (nếu cần)
+
+```bash
+# Ubuntu/Debian
+sudo ufw allow 8080/tcp
+sudo ufw reload
+
+# CentOS/RHEL
+sudo firewall-cmd --permanent --add-port=8080/tcp
+sudo firewall-cmd --reload
+```
+
 ## 🎯 Cách sử dụng
 
 1. **Xem bản đồ**: Bản đồ sẽ hiển thị khu vực Việt Nam, Hoàng Sa, Trường Sa

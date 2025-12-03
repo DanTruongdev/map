@@ -3,7 +3,7 @@ services:
   map:
     build: .
     ports:
-      - '8080:80'
+      - '42011:80'
     # Optional: live tiles updates via bind mount
     volumes:
       - ./tiles:/usr/share/nginx/html/tiles:ro
